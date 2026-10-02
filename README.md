@@ -220,7 +220,7 @@ ai-document-qa/
 ### 1. Clone the repository
 
 ```bash
-git clone <YOUR_GITHUB_REPOSITORY_URL>
+git clone <(https://github.com/shindeprem160205/name-ai-document-qa)>
 cd ai-document-qa
 ```
 
