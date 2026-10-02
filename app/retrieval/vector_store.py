@@ -15,6 +15,14 @@ def create_vector_store(embeddings):
     return index
 
 
+def add_to_vector_store(index, embeddings):
+    vectors = np.array(embeddings).astype("float32")
+
+    index.add(vectors)
+
+    return index
+
+
 def save_vector_store(index, path):
     faiss.write_index(index, path)
 
@@ -34,11 +42,24 @@ def load_chunks(path):
 
 
 def search_vector_store(index, query, model, chunks, k=3):
+
     query_vector = model.encode([query])
-    query_vector = np.array(query_vector).astype("float32")
 
-    distances, indices = index.search(query_vector, k)
+    query_vector = np.array(
+        query_vector
+    ).astype("float32")
 
-    results = [chunks[i] for i in indices[0]]
+    k = min(k, index.ntotal)
+
+    distances, indices = index.search(
+        query_vector,
+        k
+    )
+
+    results = [
+        chunks[i]
+        for i in indices[0]
+        if i != -1
+    ]
 
     return results

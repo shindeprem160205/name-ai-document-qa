@@ -27,31 +27,49 @@ st.set_page_config(
 st.markdown(
     """
     <style>
+
         .main-title {
             font-size: 42px;
             font-weight: 700;
-            margin-bottom: 5px;
+            margin-bottom: 4px;
         }
 
         .subtitle {
-            font-size: 18px;
+            font-size: 17px;
             color: #777;
-            margin-bottom: 30px;
+            margin-bottom: 25px;
         }
 
         .answer-box {
-            padding: 20px;
-            border-radius: 10px;
+            padding: 22px;
+            border-radius: 12px;
             border: 1px solid #ddd;
-            margin-top: 15px;
+            background-color: #fafafa;
+            line-height: 1.7;
+            font-size: 16px;
+        }
+
+        .document-card {
+            padding: 16px;
+            border-radius: 12px;
+            border: 1px solid #ddd;
+            margin-bottom: 15px;
         }
 
         .source-box {
             padding: 15px;
-            border-radius: 8px;
+            border-radius: 10px;
             border: 1px solid #ddd;
             margin-bottom: 10px;
+            line-height: 1.6;
         }
+
+        .section-title {
+            font-size: 25px;
+            font-weight: 650;
+            margin-top: 10px;
+        }
+
     </style>
     """,
     unsafe_allow_html=True
@@ -69,7 +87,7 @@ st.markdown(
 
 st.markdown(
     '<div class="subtitle">'
-    'Upload a PDF and ask questions using Retrieval-Augmented Generation.'
+    'Ask questions about your documents using Retrieval-Augmented Generation (RAG).'
     '</div>',
     unsafe_allow_html=True
 )
@@ -84,6 +102,9 @@ if "uploaded" not in st.session_state:
 
 if "filename" not in st.session_state:
     st.session_state.filename = ""
+
+if "chunks" not in st.session_state:
+    st.session_state.chunks = 0
 
 if "answer" not in st.session_state:
     st.session_state.answer = ""
@@ -101,14 +122,21 @@ with st.sidebar:
     st.header("📄 Document")
 
     uploaded_file = st.file_uploader(
-        "Upload a PDF",
-        type=["pdf"]
+        "Upload a PDF document",
+        type=["pdf"],
+        help="Upload a PDF to build the document knowledge base."
     )
 
     if uploaded_file:
 
-        st.write(
-            f"**Selected:** {uploaded_file.name}"
+        st.markdown(
+            f"""
+            <div class="document-card">
+                <strong>Selected document</strong><br>
+                {uploaded_file.name}
+            </div>
+            """,
+            unsafe_allow_html=True
         )
 
         if st.button(
@@ -119,7 +147,7 @@ with st.sidebar:
             try:
 
                 with st.spinner(
-                    "Processing document..."
+                    "Extracting text, creating embeddings and building vector store..."
                 ):
 
                     files = {
@@ -141,16 +169,27 @@ with st.sidebar:
                     data = response.json()
 
                     st.session_state.uploaded = True
-                    st.session_state.filename = (
-                        data.get("filename", uploaded_file.name)
+
+                    st.session_state.filename = data.get(
+                        "filename",
+                        uploaded_file.name
                     )
 
+                    st.session_state.chunks = data.get(
+                        "chunks",
+                        0
+                    )
+
+                    # Clear previous answer
+                    st.session_state.answer = ""
+                    st.session_state.sources = []
+
                     st.success(
-                        "Document processed successfully!"
+                        "✅ Document processed successfully!"
                     )
 
                     st.info(
-                        f"Created {data.get('chunks', 0)} chunks."
+                        f"📦 {st.session_state.chunks} chunks created."
                     )
 
                 else:
@@ -162,49 +201,59 @@ with st.sidebar:
             except requests.exceptions.ConnectionError:
 
                 st.error(
-                    "Cannot connect to FastAPI backend."
+                    "❌ Cannot connect to FastAPI backend. "
+                    "Make sure the backend is running."
                 )
 
             except requests.exceptions.Timeout:
 
                 st.error(
-                    "Processing took too long. Please try again."
+                    "⏳ Processing took too long. Please try again."
                 )
 
             except Exception as e:
 
                 st.error(
-                    f"Error: {str(e)}"
+                    f"❌ Error: {str(e)}"
                 )
 
 
 # -----------------------------
-# Main Question Area
+# Active Document
 # -----------------------------
 
-st.header("💬 Ask a Question")
+st.markdown(
+    '<div class="section-title">💬 Ask a Question</div>',
+    unsafe_allow_html=True
+)
 
 if st.session_state.uploaded:
 
     st.success(
-        f"📄 Active document: {st.session_state.filename}"
+        f"📄 Active document: **{st.session_state.filename}**"
     )
 
 else:
 
     st.info(
-        "Upload and process a PDF from the sidebar first."
+        "Upload and process a PDF from the sidebar to start asking questions."
     )
 
 
+# -----------------------------
+# Question Input
+# -----------------------------
+
 question = st.text_area(
     "Your question",
-    placeholder=(
-        "Example: What are the global logistics trends?"
-    ),
+    placeholder="Example: What skills does the candidate have?",
     height=100
 )
 
+
+# -----------------------------
+# Ask Question
+# -----------------------------
 
 if st.button(
     "🔍 Ask Question",
@@ -215,13 +264,13 @@ if st.button(
     if not st.session_state.uploaded:
 
         st.warning(
-            "Please upload and process a PDF first."
+            "⚠️ Please upload and process a PDF first."
         )
 
     elif not question.strip():
 
         st.warning(
-            "Please enter a question."
+            "⚠️ Please enter a question."
         )
 
     else:
@@ -229,13 +278,13 @@ if st.button(
         try:
 
             with st.spinner(
-                "Searching the document and generating answer..."
+                "🔎 Searching document and generating answer..."
             ):
 
                 response = requests.post(
                     f"{BACKEND_URL}/ask",
                     json={
-                        "question": question
+                        "question": question.strip()
                     },
                     timeout=120
                 )
@@ -244,36 +293,38 @@ if st.button(
 
                 data = response.json()
 
-                st.session_state.answer = (
-                    data.get("answer", "")
+                st.session_state.answer = data.get(
+                    "answer",
+                    ""
                 )
 
-                st.session_state.sources = (
-                    data.get("sources", [])
+                st.session_state.sources = data.get(
+                    "sources",
+                    []
                 )
 
             else:
 
                 st.error(
-                    f"Request failed: {response.text}"
+                    f"❌ Request failed: {response.text}"
                 )
 
         except requests.exceptions.ConnectionError:
 
             st.error(
-                "Cannot connect to FastAPI backend."
+                "❌ Cannot connect to FastAPI backend."
             )
 
         except requests.exceptions.Timeout:
 
             st.error(
-                "The request timed out. Please try again."
+                "⏳ The request timed out. Please try again."
             )
 
         except Exception as e:
 
             st.error(
-                f"Error: {str(e)}"
+                f"❌ Error: {str(e)}"
             )
 
 
@@ -285,12 +336,15 @@ if st.session_state.answer:
 
     st.divider()
 
-    st.header("🤖 Answer")
+    st.markdown(
+        '<div class="section-title">🤖 Answer</div>',
+        unsafe_allow_html=True
+    )
 
     st.markdown(
         f"""
         <div class="answer-box">
-        {st.session_state.answer}
+            {st.session_state.answer}
         </div>
         """,
         unsafe_allow_html=True
@@ -301,9 +355,21 @@ if st.session_state.answer:
 # Sources
 # -----------------------------
 
+# -----------------------------
+# Sources
+# -----------------------------
+
 if st.session_state.sources:
 
-    st.header("📚 Sources")
+    st.markdown(
+        '<div class="section-title">📚 Retrieved Sources</div>',
+        unsafe_allow_html=True
+    )
+
+    st.caption(
+        "These passages were retrieved from the uploaded document "
+        "and provided to the language model as context."
+    )
 
     for index, source in enumerate(
         st.session_state.sources,
@@ -311,7 +377,13 @@ if st.session_state.sources:
     ):
 
         with st.expander(
-            f"Source {index}"
+            f"📄 Source {index}"
         ):
 
-            st.write(source)
+            st.caption(
+                f"Source: {source['source']}"
+            )
+
+            st.write(
+                source["text"]
+            )
