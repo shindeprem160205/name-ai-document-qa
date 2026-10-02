@@ -467,11 +467,20 @@ Computer Engineering Graduate
 ---
 
 ## ⭐ Project
+This project was built step by step with a focus on understanding the complete RAG pipeline, from document ingestion and vector retrieval to LLM-based answer generation.
 
-If you find this project useful, consider giving the repository a star on GitHub.
-```
+If you explore the project and have ideas for improvements, optimizations, bug fixes, or useful features, contributions and suggestions are always welcome.
 
-Bas **`README.md` mein pura replace karke save** kar. Then:
+Feel free to:
+
+- Open an issue for bugs or feature requests
+- Suggest improvements to the architecture or implementation
+- Submit a pull request with meaningful changes
+- Share feedback on the project
+
+If you find the project useful or interesting, consider giving the repository a ⭐ **Star** on GitHub. It helps support the project and motivates further development.
+
+**Thank you for exploring the project and contributing to its improvement!**
 
 ```bash
 git add README.md
