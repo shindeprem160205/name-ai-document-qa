@@ -482,8 +482,3 @@ If you find the project useful or interesting, consider giving the repository a 
 
 **Thank you for exploring the project and contributing to its improvement!**
 
-```bash
-git add README.md
-git commit -m "docs: improve project README"
-git push origin main
-```
