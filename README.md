@@ -2,9 +2,9 @@
 ```markdown
 # 📚 AI Document Q&A — RAG Knowledge Assistant
 
-An AI-powered Document Question Answering system built using **Retrieval-Augmented Generation (RAG)**.
+An AI-powered document question-answering system built using **Retrieval-Augmented Generation (RAG)**.
 
-The application allows users to upload PDF documents and ask questions about their content. The system retrieves relevant document chunks using semantic search and uses a Gemini language model to generate grounded answers.
+The application allows users to upload PDF documents and ask questions about their content. Relevant document chunks are retrieved using semantic search and provided to a Gemini language model to generate grounded answers with source references.
 
 ---
 
@@ -13,84 +13,97 @@ The application allows users to upload PDF documents and ask questions about the
 - 📄 Upload PDF documents
 - 📝 Extract text from PDF files
 - ✂️ Split documents into smaller chunks
-- 🧠 Generate text embeddings using Sentence Transformers
+- 🧠 Generate embeddings using Sentence Transformers
 - 🔎 Semantic similarity search using FAISS
 - 📚 Support for multiple PDF documents
-- 🏷️ Track the source document for retrieved chunks
+- 🏷️ Track source documents for retrieved content
 - 🤖 Generate answers using Google Gemini
-- 🌐 FastAPI backend
-- 🎨 Streamlit user interface
+- 🌐 FastAPI REST API backend
+- 🎨 Streamlit web interface
 - 💾 Persistent FAISS vector store
-- ⚠️ Basic error handling for invalid/empty documents
+- ⚠️ Basic error handling
 
 ---
 
-## 🏗️ Architecture
+## 🏗️ System Architecture
 
 ```text
-                ┌─────────────────┐
-                │   PDF Upload    │
-                └────────┬────────┘
-                         │
-                         ▼
-                ┌─────────────────┐
-                │  Text Extraction│
-                │    PyMuPDF      │
-                └────────┬────────┘
-                         │
-                         ▼
-                ┌─────────────────┐
-                │    Chunking     │
-                │ LangChain Split │
-                └────────┬────────┘
-                         │
-                         ▼
-                ┌─────────────────┐
-                │   Embeddings    │
-                │ MiniLM Model    │
-                └────────┬────────┘
-                         │
-                         ▼
-                ┌─────────────────┐
-                │      FAISS      │
-                │  Vector Store   │
-                └────────┬────────┘
-                         │
-                         │
-User Question ───────────┘
-        │
-        ▼
-┌─────────────────┐
-│ Query Embedding │
-└────────┬────────┘
-         │
-         ▼
-┌─────────────────┐
-│ Similarity Search│
-│   Top-K Chunks  │
-└────────┬────────┘
-         │
-         ▼
-┌─────────────────┐
-│ Context + Query │
-└────────┬────────┘
-         │
-         ▼
-┌─────────────────┐
-│  Gemini LLM     │
-└────────┬────────┘
-         │
-         ▼
-┌─────────────────┐
-│ Answer + Sources│
-└─────────────────┘
+                         DOCUMENT INGESTION
+                                
+    ┌──────────────┐
+    │  PDF Upload  │
+    └──────┬───────┘
+           │
+           ▼
+    ┌──────────────┐
+    │ Text         │
+    │ Extraction   │
+    │  PyMuPDF     │
+    └──────┬───────┘
+           │
+           ▼
+    ┌──────────────┐
+    │   Chunking   │
+    │ LangChain    │
+    │ Text Splitter│
+    └──────┬───────┘
+           │
+           ▼
+    ┌──────────────┐
+    │  Embeddings  │
+    │ MiniLM Model │
+    └──────┬───────┘
+           │
+           ▼
+    ┌──────────────┐
+    │    FAISS     │
+    │ Vector Store │
+    └──────┬───────┘
+           │
+           │
+           │              QUESTION ANSWERING
+           │
+           │       ┌──────────────────┐
+           └──────►│  User Question   │
+                   └────────┬─────────┘
+                            │
+                            ▼
+                   ┌──────────────────┐
+                   │ Query Embedding  │
+                   └────────┬─────────┘
+                            │
+                            ▼
+                   ┌──────────────────┐
+                   │ FAISS Similarity │
+                   │     Search       │
+                   └────────┬─────────┘
+                            │
+                            ▼
+                   ┌──────────────────┐
+                   │ Relevant Chunks  │
+                   └────────┬─────────┘
+                            │
+                            ▼
+                   ┌──────────────────┐
+                   │ Context + Query  │
+                   └────────┬─────────┘
+                            │
+                            ▼
+                   ┌──────────────────┐
+                   │   Gemini LLM     │
+                   └────────┬─────────┘
+                            │
+                            ▼
+                   ┌──────────────────┐
+                   │ Answer + Sources │
+                   └──────────────────┘
 ```
 
 ---
 
 ## 🧠 How RAG Works
 
-The application follows two main pipelines.
+The application uses two main pipelines.
 
 ### Document Ingestion
 
@@ -111,7 +124,7 @@ FAISS Vector Store
 ```text
 User Question
  ↓
-Question Embedding
+Query Embedding
  ↓
 FAISS Similarity Search
  ↓
@@ -121,10 +134,10 @@ Context Construction
  ↓
 Gemini
  ↓
-Answer
+Answer + Sources
 ```
 
-Instead of sending the entire document to the language model, the system retrieves the most relevant chunks and uses them as context.
+Instead of sending the complete document to the language model, the system retrieves the most relevant chunks and provides only that context to the model.
 
 ---
 
@@ -211,15 +224,15 @@ git clone <YOUR_GITHUB_REPOSITORY_URL>
 cd ai-document-qa
 ```
 
-### 2. Create virtual environment
+### 2. Create a virtual environment
 
 ```bash
 python -m venv .venv
 ```
 
-### 3. Activate virtual environment
+### 3. Activate the virtual environment
 
-Windows PowerShell:
+**Windows PowerShell:**
 
 ```powershell
 .venv\Scripts\activate
@@ -247,7 +260,9 @@ The `.env` file is excluded from Git using `.gitignore`.
 
 ## ▶️ Running the Application
 
-### Start FastAPI backend
+The application uses two processes: a FastAPI backend and a Streamlit frontend.
+
+### Start FastAPI Backend
 
 ```bash
 python -m uvicorn app.main:app
@@ -265,15 +280,15 @@ Health check:
 http://127.0.0.1:8000/health
 ```
 
-### Start Streamlit frontend
+### Start Streamlit Frontend
 
-Open another terminal:
+Open another terminal and run:
 
 ```bash
 streamlit run app/ui/streamlit_app.py
 ```
 
-Streamlit:
+Application:
 
 ```text
 http://localhost:8501
@@ -305,7 +320,13 @@ POST /upload
 
 Uploads and processes a PDF document.
 
-The pipeline extracts text, creates chunks, generates embeddings, and adds them to the FAISS vector store.
+The document is:
+
+1. Saved locally
+2. Parsed into text
+3. Split into chunks
+4. Converted into embeddings
+5. Added to the FAISS vector store
 
 ### Ask Question
 
@@ -334,7 +355,7 @@ Response:
 
 ## 🔍 Retrieval Process
 
-The system uses:
+The application uses the following retrieval pipeline:
 
 ```text
 all-MiniLM-L6-v2
@@ -344,60 +365,69 @@ all-MiniLM-L6-v2
 FAISS IndexFlatL2
         ↓
 Top 3 relevant chunks
+        ↓
+Context
+        ↓
+Gemini
 ```
 
-The retrieved chunks are combined into the context provided to Gemini.
+The retrieved chunks are combined into the context provided to the language model.
 
 ---
 
-## 📚 Multiple Documents
+## 📚 Multiple Document Support
 
-The application supports adding multiple PDF documents to the same vector store.
+The system supports adding multiple PDF documents to the same vector store.
 
 For each uploaded document:
 
 ```text
 PDF
  ↓
-Chunks
+Text Extraction
+ ↓
+Chunking
  ↓
 Embeddings
  ↓
 Existing FAISS Index
  ↓
-Add new vectors
+Add New Vectors
  ↓
 Updated Vector Store
 ```
 
-Each chunk also stores its source filename so retrieved content can be traced back to the document it came from.
+Each chunk stores the source filename, allowing retrieved content to be traced back to the original document.
 
 ---
 
-## 🛡️ Basic Error Handling
+## 🛡️ Error Handling
 
-The application handles cases such as:
+The application includes basic handling for:
 
-- Backend unavailable
-- Request timeout
-- Empty PDF
-- PDF without readable text
+- Backend connection failures
+- Request timeouts
+- Empty PDF files
+- PDFs without readable text
 - Missing vector store
 - Missing chunk data
-- Invalid user question
+- Invalid questions
+- API errors
 
 ---
 
-## 🎯 Project Goal
+## 🎯 Project Objective
 
-The goal of this project is to demonstrate a practical implementation of a **Retrieval-Augmented Generation system** rather than relying on a language model alone.
+The objective of this project is to build a practical **Retrieval-Augmented Generation system** that combines document retrieval with a large language model.
 
-It combines:
+The project demonstrates practical implementation of:
 
 - Document processing
-- Natural language embeddings
+- Text chunking
+- Text embeddings
 - Vector databases
-- Semantic retrieval
+- Semantic search
+- Retrieval-Augmented Generation
 - Large Language Models
 - REST APIs
 - Web application development
@@ -406,19 +436,17 @@ It combines:
 
 ## 🔮 Future Improvements
 
-Potential future improvements include:
-
 - Document deletion and management
 - Chat history
-- Better source citations
+- Improved source citations
 - Streaming LLM responses
-- Authentication
-- Improved retrieval techniques
-- Reranking retrieved documents
+- User authentication
 - Metadata filtering
-- Production deployment
+- Retrieval reranking
+- Hybrid search
 - Automated testing
-- Docker-based deployment
+- Dockerization
+- Cloud deployment
 
 ---
 
@@ -428,10 +456,10 @@ Potential future improvements include:
 
 Computer Engineering Graduate
 
-Interested in:
+### Areas of Interest
 
 - Python Development
-- AI/ML
+- AI / ML
 - Data Science
 - Backend Development
 - RAG & LLM Applications
@@ -440,18 +468,13 @@ Interested in:
 
 ## ⭐ Project
 
-If you find this project useful, consider giving it a star on GitHub.
+If you find this project useful, consider giving the repository a star on GitHub.
 ```
 
-### Ek important correction
-
-README mein **`data/` structure dikhana okay hai**, but actual PDF/FAISS files `.gitignore` ki wajah se GitHub par nahi jayengi.
-
-Ab:
+Bas **`README.md` mein pura replace karke save** kar. Then:
 
 ```bash
 git add README.md
 git commit -m "docs: improve project README"
 git push origin main
 ```
-
