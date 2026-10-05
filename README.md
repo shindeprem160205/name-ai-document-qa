@@ -105,7 +105,7 @@ The application allows users to upload PDF documents and ask natural-language qu
                    ┌──────────────────┐
                    │ Answer + Sources │
                    └──────────────────┘
-
+'''
 🧠 How RAG Works
 The application uses two main pipelines.
 Document Ingestion
